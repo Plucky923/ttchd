@@ -114,29 +114,38 @@ fn build_prompt(config: &Config, mood: Option<&str>) -> String {
 pub async fn ai_recommend(mood: Option<&str>) -> Result<String, Box<dyn std::error::Error>> {
     let config = load_config();
 
-    let (api_key, openai_endpoint) = match config.api.provider.as_str() {
-        "zhipu" => (&config.api.zhipu_key, None),
+    let (api_key_opt, openai_endpoint) = match config.api.provider.as_str() {
+        "zhipu" => (config.api.zhipu_key.clone(), None),
         "openai" => (
-            &config.api.openai_key,
-            Some(config.api.openai_endpoint.as_str()),
+            config.api.openai_key.clone(),
+            config.api.openai_endpoint.clone(),
         ),
-        _ => (&config.api.deepseek_key, None),
+        _ => (config.api.deepseek_key.clone(), None),
     };
 
-    if api_key.is_empty() {
-        return Err(format!(
-            "请先配置 {} API Key。运行 'ttchd config' 查看配置文件路径。",
-            match config.api.provider.as_str() {
-                "zhipu" => "智谱AI",
-                "openai" => "OpenAI",
-                _ => "DeepSeek",
-            }
-        )
-        .into());
-    }
+    let api_key = match api_key_opt {
+        Some(key) => key,
+        None => {
+            return Err(format!(
+                "请先配置 {} API Key。运行 'ttchd config' 查看配置文件路径。",
+                match config.api.provider.as_str() {
+                    "zhipu" => "智谱AI",
+                    "openai" => "OpenAI",
+                    _ => "DeepSeek",
+                }
+            )
+            .into());
+        }
+    };
 
     let prompt = build_prompt(&config, mood);
-    let result = ai::chat(&config.api.provider, api_key, &prompt, openai_endpoint).await?;
+    let result = ai::chat(
+        &config.api.provider,
+        &api_key,
+        &prompt,
+        openai_endpoint.as_deref(),
+    )
+    .await?;
 
     Ok(result.trim().to_string())
 }
