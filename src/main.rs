@@ -43,14 +43,12 @@ async fn main() {
             let food = recommend::random_recommend();
             println!("今天吃：{}", food);
         }
-        Some(Commands::Config) => {
-            match config::init_config() {
-                Ok(path) => {
-                    println!("配置文件路径: {}", path.display());
-                }
-                Err(e) => eprintln!("错误: {}", e),
+        Some(Commands::Config) => match config::init_config() {
+            Ok(path) => {
+                println!("配置文件路径: {}", path.display());
             }
-        }
+            Err(e) => eprintln!("错误: {}", e),
+        },
         Some(Commands::Ban { food }) => {
             if let Err(e) = config::add_to_blacklist(&food) {
                 eprintln!("失败: {}", e);

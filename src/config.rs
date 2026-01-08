@@ -17,14 +17,16 @@ pub struct ApiConfig {
     pub provider: String,
     pub deepseek_key: String,
     pub zhipu_key: String,
+    pub openai_key: String,
+    pub openai_endpoint: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserProfile {
     pub name: String,
-    pub spicy: u8,           // 0-5 辣度接受程度
-    pub sweet: u8,           // 0-5 甜度喜好
-    pub sour: u8,            // 0-5 酸度喜好
+    pub spicy: u8, // 0-5 辣度接受程度
+    pub sweet: u8, // 0-5 甜度喜好
+    pub sour: u8,  // 0-5 酸度喜好
     pub vegetarian: bool,
     pub halal: bool,
     pub allergies: Vec<String>,
@@ -47,6 +49,8 @@ impl Default for Config {
                 provider: "deepseek".to_string(),
                 deepseek_key: String::new(),
                 zhipu_key: String::new(),
+                openai_key: String::new(),
+                openai_endpoint: String::new(),
             },
             user: UserProfile {
                 name: String::new(),

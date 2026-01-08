@@ -1,7 +1,7 @@
 use crate::ai;
-use crate::config::{load_config, Config};
+use crate::config::{Config, load_config};
 use chrono::{Local, Timelike};
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 
 fn get_meal_time() -> &'static str {
     let hour = Local::now().hour();
@@ -80,7 +80,24 @@ fn build_prompt(config: &Config, mood: Option<&str>) -> String {
     };
 
     // 随机类型增加多样性
-    let categories = ["中餐", "西餐", "日料", "韩餐", "东南亚菜", "小吃", "面食", "米饭", "汤品", "烧烤", "火锅", "甜品", "轻食", "快餐", "家常菜", "地方特色"];
+    let categories = [
+        "中餐",
+        "西餐",
+        "日料",
+        "韩餐",
+        "东南亚菜",
+        "小吃",
+        "面食",
+        "米饭",
+        "汤品",
+        "烧烤",
+        "火锅",
+        "甜品",
+        "轻食",
+        "快餐",
+        "家常菜",
+        "地方特色",
+    ];
     let mut rng = rand::thread_rng();
     let random_cat = categories.choose(&mut rng).unwrap_or(&"美食");
     let seed: u32 = rng.gen_range(1000..9999);
@@ -97,28 +114,49 @@ fn build_prompt(config: &Config, mood: Option<&str>) -> String {
 pub async fn ai_recommend(mood: Option<&str>) -> Result<String, Box<dyn std::error::Error>> {
     let config = load_config();
 
-    let api_key = match config.api.provider.as_str() {
-        "zhipu" => &config.api.zhipu_key,
-        _ => &config.api.deepseek_key,
+    let (api_key, openai_endpoint) = match config.api.provider.as_str() {
+        "zhipu" => (&config.api.zhipu_key, None),
+        "openai" => (
+            &config.api.openai_key,
+            Some(config.api.openai_endpoint.as_str()),
+        ),
+        _ => (&config.api.deepseek_key, None),
     };
 
     if api_key.is_empty() {
         return Err(format!(
             "请先配置 {} API Key。运行 'ttchd config' 查看配置文件路径。",
-            if config.api.provider == "zhipu" { "智谱AI" } else { "DeepSeek" }
-        ).into());
+            match config.api.provider.as_str() {
+                "zhipu" => "智谱AI",
+                "openai" => "OpenAI",
+                _ => "DeepSeek",
+            }
+        )
+        .into());
     }
 
     let prompt = build_prompt(&config, mood);
-    let result = ai::chat(&config.api.provider, api_key, &prompt).await?;
+    let result = ai::chat(&config.api.provider, api_key, &prompt, openai_endpoint).await?;
 
     Ok(result.trim().to_string())
 }
 
 pub fn random_recommend() -> String {
     let foods = vec![
-        "火锅", "烧烤", "麻辣烫", "炸鸡", "披萨", "汉堡", "寿司", "拉面",
-        "饺子", "小龙虾", "麻辣香锅", "黄焖鸡", "螺蛳粉", "酸菜鱼",
+        "火锅",
+        "烧烤",
+        "麻辣烫",
+        "炸鸡",
+        "披萨",
+        "汉堡",
+        "寿司",
+        "拉面",
+        "饺子",
+        "小龙虾",
+        "麻辣香锅",
+        "黄焖鸡",
+        "螺蛳粉",
+        "酸菜鱼",
     ];
     let mut rng = rand::thread_rng();
     foods
