@@ -48,7 +48,7 @@ pub async fn chat(provider: &str, api_key: &str, prompt: &str) -> Result<String,
             content: prompt.to_string(),
         }],
         max_tokens: 50,
-        temperature: 1.0,
+        temperature: 1.3,
     };
 
     let response = client

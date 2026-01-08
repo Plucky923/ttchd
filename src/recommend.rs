@@ -1,7 +1,7 @@
 use crate::ai;
 use crate::config::{load_config, Config};
 use chrono::{Local, Timelike};
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, Rng};
 
 fn get_meal_time() -> &'static str {
     let hour = Local::now().hour();
@@ -79,10 +79,18 @@ fn build_prompt(config: &Config, mood: Option<&str>) -> String {
         format!("。{}", config.rules.custom_prompt)
     };
 
+    // 随机类型增加多样性
+    let categories = ["中餐", "西餐", "日料", "韩餐", "东南亚菜", "小吃", "面食", "米饭", "汤品", "烧烤", "火锅", "甜品", "轻食", "快餐", "家常菜", "地方特色"];
+    let mut rng = rand::thread_rng();
+    let random_cat = categories.choose(&mut rng).unwrap_or(&"美食");
+    let seed: u32 = rng.gen_range(1000..9999);
+
     format!(
-        "{}{}。推荐一道美食，格式:食物名（15字内理由）",
+        "[{}]{}{}。随机推荐一道{}，不要重复之前的，格式:食物名（15字内理由）",
+        seed,
         parts.join("，"),
-        custom
+        custom,
+        random_cat
     )
 }
 
