@@ -1,5 +1,5 @@
 use crate::ai;
-use crate::config::{get_all_foods, load_config, Config};
+use crate::config::{load_config, Config};
 use chrono::{Local, Timelike};
 use rand::seq::SliceRandom;
 
@@ -15,25 +15,74 @@ fn get_meal_time() -> &'static str {
 }
 
 fn build_prompt(config: &Config, mood: Option<&str>) -> String {
-    let foods = get_all_foods();
     let meal_time = get_meal_time();
+    let mut parts = vec![];
 
-    let mut conditions = vec![format!("时间:{}", meal_time)];
+    // 时间
+    parts.push(format!("时间:{}", meal_time));
 
-    if config.preferences.spicy {
-        conditions.push("爱辣".to_string());
+    // 用户口味
+    if config.user.spicy >= 4 {
+        parts.push("爱吃辣".to_string());
+    } else if config.user.spicy <= 1 {
+        parts.push("不吃辣".to_string());
     }
-    if config.preferences.vegetarian {
-        conditions.push("素食".to_string());
+    if config.user.sweet >= 4 {
+        parts.push("喜甜".to_string());
     }
+    if config.user.sour >= 4 {
+        parts.push("喜酸".to_string());
+    }
+    if config.user.vegetarian {
+        parts.push("素食".to_string());
+    }
+    if config.user.halal {
+        parts.push("清真".to_string());
+    }
+
+    // 预算
+    match config.user.budget.as_str() {
+        "low" => parts.push("预算低".to_string()),
+        "high" => parts.push("预算高".to_string()),
+        _ => {}
+    }
+
+    // 偏好菜系
+    if !config.user.cuisine.is_empty() {
+        parts.push(format!("偏好:{}", config.user.cuisine.join("/")));
+    }
+
+    // 过敏
+    if !config.user.allergies.is_empty() {
+        parts.push(format!("过敏:{}", config.user.allergies.join("/")));
+    }
+
+    // 黑名单
+    if !config.rules.blacklist.is_empty() {
+        parts.push(format!("不吃:{}", config.rules.blacklist.join("/")));
+    }
+
+    // 最近吃过
+    if !config.rules.recent.is_empty() {
+        parts.push(format!("最近吃过:{}", config.rules.recent.join("/")));
+    }
+
+    // 心情
     if let Some(m) = mood {
-        conditions.push(format!("心情:{}", m));
+        parts.push(format!("心情:{}", m));
     }
+
+    // 自定义提示
+    let custom = if config.rules.custom_prompt.is_empty() {
+        String::new()
+    } else {
+        format!("。{}", config.rules.custom_prompt)
+    };
 
     format!(
-        "{}。从[{}]选一个推荐，格式:食物名（10字内理由）",
-        conditions.join(","),
-        foods.join(",")
+        "{}{}。推荐一道美食，格式:食物名（15字内理由）",
+        parts.join("，"),
+        custom
     )
 }
 
@@ -59,7 +108,10 @@ pub async fn ai_recommend(mood: Option<&str>) -> Result<String, Box<dyn std::err
 }
 
 pub fn random_recommend() -> String {
-    let foods = get_all_foods();
+    let foods = vec![
+        "火锅", "烧烤", "麻辣烫", "炸鸡", "披萨", "汉堡", "寿司", "拉面",
+        "饺子", "小龙虾", "麻辣香锅", "黄焖鸡", "螺蛳粉", "酸菜鱼",
+    ];
     let mut rng = rand::thread_rng();
     foods
         .choose(&mut rng)

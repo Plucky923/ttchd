@@ -11,7 +11,7 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
-    /// 指定心情或需求，如 "想吃辣的"
+    /// 指定心情或需求
     #[arg(short, long)]
     mood: Option<String>,
 }
@@ -22,13 +22,16 @@ enum Commands {
     Random,
     /// 初始化或查看配置文件
     Config,
-    /// 添加自定义食物
-    Add {
+    /// 加入黑名单（不想再吃的食物）
+    Ban {
         /// 食物名称
         food: String,
     },
-    /// 列出所有可选食物
-    List,
+    /// 不想吃这个，换一个推荐
+    Skip {
+        /// 不想吃的食物
+        food: String,
+    },
 }
 
 #[tokio::main]
@@ -43,35 +46,43 @@ async fn main() {
         Some(Commands::Config) => {
             match config::init_config() {
                 Ok(path) => {
-                    println!("请编辑配置文件设置 API Key 和偏好：");
-                    println!("{}", path.display());
+                    println!("配置文件路径: {}", path.display());
                 }
                 Err(e) => eprintln!("错误: {}", e),
             }
         }
-        Some(Commands::Add { food }) => {
-            if let Err(e) = config::add_food(&food) {
-                eprintln!("添加失败: {}", e);
+        Some(Commands::Ban { food }) => {
+            if let Err(e) = config::add_to_blacklist(&food) {
+                eprintln!("失败: {}", e);
             }
         }
-        Some(Commands::List) => {
-            let foods = config::get_all_foods();
-            println!("可选食物列表 ({} 种)：", foods.len());
-            for (i, food) in foods.iter().enumerate() {
-                print!("{:<8}", food);
-                if (i + 1) % 5 == 0 {
-                    println!();
-                }
-            }
-            println!();
-        }
-        None => {
-            // 默认：AI 智能推荐
+        Some(Commands::Skip { food }) => {
+            // 记录不想吃的，然后重新推荐
+            let _ = config::add_skip(&food);
             match recommend::ai_recommend(cli.mood.as_deref()).await {
-                Ok(result) => println!("今天吃：{}", result),
+                Ok(result) => {
+                    println!("今天吃：{}", result);
+                    let food_name = result.split('（').next().unwrap_or(&result).trim();
+                    let _ = config::add_recent(food_name);
+                }
                 Err(e) => {
                     eprintln!("AI 推荐失败: {}", e);
-                    eprintln!("使用随机推荐作为备选...");
+                    let food = recommend::random_recommend();
+                    println!("今天吃：{}", food);
+                }
+            }
+        }
+        None => {
+            match recommend::ai_recommend(cli.mood.as_deref()).await {
+                Ok(result) => {
+                    println!("今天吃：{}", result);
+                    // 提取食物名并记录到最近吃过
+                    let food_name = result.split('（').next().unwrap_or(&result).trim();
+                    let _ = config::add_recent(food_name);
+                }
+                Err(e) => {
+                    eprintln!("AI 推荐失败: {}", e);
+                    eprintln!("使用随机推荐...");
                     let food = recommend::random_recommend();
                     println!("今天吃：{}", food);
                 }
