@@ -26,9 +26,9 @@ ttchd config  # 初始化配置
 [api]
 provider = "deepseek"  # 或 "zhipu", "openai"
 deepseek_key = "sk-xxx"
-zhipu_key = ""
-openai_key = ""
-openai_endpoint = ""  # OpenAI 兼容 API 地址，如 "http://localhost:9550/v1"
+# zhipu_key 仅在 provider="zhipu" 时需填写
+# openai_key 仅在 provider="openai" 时需填写
+# openai_endpoint 仅在 provider="openai" 时需填写
 
 [user]
 name = ""
@@ -40,7 +40,6 @@ halal = false
 allergies = []    # 过敏食材，如 ["花生", "海鲜"]
 budget = "medium" # low/medium/high
 cuisine = []      # 偏好菜系，如 ["川菜", "日料"]
-
 [rules]
 favorites = []
 blacklist = []    # 永远不吃
@@ -89,19 +88,14 @@ $ ttchd -m "减肥中"
 ```toml
 [api]
 provider = "openai"
-deepseek_key = ""
-zhipu_key = ""
 openai_key = "sk-any-key-here"  # 许多 OpenAI 兼容服务接受任意键
 openai_endpoint = "http://localhost:8080/v1/chat/completions"  # 包含完整路径
+# deepseek_key 和 zhipu_key 可以省略
 ```
 
 **注意**：`openai_endpoint` 应该包含完整的 API 路径，例如：
 - `http://localhost:8080/v1/chat/completions`
 - `https://api.openai.com/v1/chat/completions`
-
-如果使用 llama.cpp， typical endpoints are:
-- Local: `http://localhost:8080/v1/chat/completions`
-- Remote: `[your-remote-server]/v1/chat/completions`
 
 ## License
 

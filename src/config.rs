@@ -15,10 +15,10 @@ pub struct Config {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiConfig {
     pub provider: String,
-    pub deepseek_key: String,
-    pub zhipu_key: String,
-    pub openai_key: String,
-    pub openai_endpoint: String,
+    pub deepseek_key: Option<String>,
+    pub zhipu_key: Option<String>,
+    pub openai_key: Option<String>,
+    pub openai_endpoint: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -47,10 +47,10 @@ impl Default for Config {
         Config {
             api: ApiConfig {
                 provider: "deepseek".to_string(),
-                deepseek_key: String::new(),
-                zhipu_key: String::new(),
-                openai_key: String::new(),
-                openai_endpoint: String::new(),
+                deepseek_key: None,
+                zhipu_key: None,
+                openai_key: None,
+                openai_endpoint: None,
             },
             user: UserProfile {
                 name: String::new(),
