@@ -33,12 +33,34 @@ struct ResponseMessage {
     content: String,
 }
 
-pub async fn chat(provider: &str, api_key: &str, prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn chat(
+    provider: &str,
+    api_key: &str,
+    prompt: &str,
+    openai_endpoint: Option<&str>,
+) -> Result<String, Box<dyn std::error::Error>> {
     let client = Client::new();
 
     let (api_url, model) = match provider {
         "zhipu" => (ZHIPU_API_URL, "GLM-4.5-Flash"),
-        _ => (DEEPSEEK_API_URL, "deepseek-chat"),  // 默认使用 deepseek
+        "openai" => {
+            if let Some(endpoint) = openai_endpoint {
+                if !endpoint.is_empty() {
+                    (endpoint, "gpt-3.5-turbo")
+                } else {
+                    (
+                        "https://api.openai.com/v1/chat/completions",
+                        "gpt-3.5-turbo",
+                    )
+                }
+            } else {
+                (
+                    "https://api.openai.com/v1/chat/completions",
+                    "gpt-3.5-turbo",
+                )
+            }
+        }
+        _ => (DEEPSEEK_API_URL, "deepseek-chat"), // 默认使用 deepseek
     };
 
     let request = ChatRequest {
